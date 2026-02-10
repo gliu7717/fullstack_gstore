@@ -3,6 +3,8 @@ const delay = (ms: number | undefined) =>
 import ProductList from "@/components/shared/product/product-list";
 import { getLatestProducts } from "@/lib/actions/product.actions";
 
+export const dynamic = "force-dynamic";
+
 const Homepage = async () => {
   //  await delay(2000);
   const latestProducts = await getLatestProducts();
