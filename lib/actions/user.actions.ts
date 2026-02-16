@@ -22,5 +22,12 @@ export async function signInWithCredentials(preState: unknown, formData: FormDat
 
 // Sign use out
 export async function signOutUser() {
-    await signOut();
+    try {
+        await signOut({ redirectTo: '/' });
+    } catch (error) {
+        if (isRedirectError(error)) {
+            throw error;
+        }
+        throw error;
+    }
 }
