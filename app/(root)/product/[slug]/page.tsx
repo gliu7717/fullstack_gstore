@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import ProductImages from "@/components/shared/product/product-images";
 import AddToCart from "@/components/shared/product/add-to-cart";
+import { Product } from "@/types";
 
 const ProductDetailsPage = async (props: {
   params: Promise<{ slug: string }>;
@@ -14,7 +15,7 @@ const ProductDetailsPage = async (props: {
 
   const { slug } = params;
 
-  const product = await getProductBySlug(slug);
+  const product = await getProductBySlug(slug) as Product;
   console.log(product);
 
   if (!product) notFound();
