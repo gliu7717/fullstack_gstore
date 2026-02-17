@@ -132,7 +132,7 @@ export async function getMyCart() {
 export async function removeItemFromCart(productId: string) {
     try {
         // check for cart cookie
-        const sessionCardId = (await cookies()).get('sessionCardId')?.value;
+        const sessionCardId = (await cookies()).get("sessionCartId")?.value
         if (!sessionCardId) throw new Error('Cart session not found');
         //get product
         const product = await prisma.product.findFirst({
@@ -151,7 +151,7 @@ export async function removeItemFromCart(productId: string) {
             cart.items = (cart.items as CartItem[]).filter((x) => x.productId !== exist.productId)
         } else {
             // decrease qty
-            (cart.items as CartItem[]).find((x) => x.productId)!.qty = exist.qty - 1
+            (cart.items as CartItem[]).find((x) => x.productId === productId)!.qty = exist.qty - 1
         }
         // update cart in db
         await prisma.cart.update({
@@ -168,6 +168,7 @@ export async function removeItemFromCart(productId: string) {
         }
 
     } catch (error) {
+        console.log(error);
         return { success: false, message: formatError(error) }
     }
 }
