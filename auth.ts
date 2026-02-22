@@ -1,16 +1,22 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import NextAuth from 'next-auth'
 import { PrismaAdapter } from '@auth/prisma-adapter'
 import { prisma } from './db/prisma'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import { compareSync } from 'bcrypt-ts-edge'
 import type { NextAuthConfig } from 'next-auth'
+import { CredentialsSignin } from "next-auth"
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
+import { Cookie } from 'next/font/google'
+
+class InvalidLoginError extends CredentialsSignin {
+    code = "Invalid identifier or password"
+}
 
 export const config = {
     pages: {
         signIn: '/sign-in',
+        signOut: '/sign-out',
         error: '/sign-in'
     },
     session: {
@@ -24,6 +30,7 @@ export const config = {
                 email: { type: 'email' },
                 password: { type: 'password' }
             },
+
             async authorize(credentials) {
                 if (credentials == null) return null;
                 //Find user in database
@@ -44,55 +51,107 @@ export const config = {
                             role: user.role
                         }
                     }
+                    // not match
+                    //return null;
                 }
-                // not match or no password
-                return null;
+                throw new InvalidLoginError()
             }
         })
     ],
     callbacks: {
-        async jwt({ token, user }: any) {
-            if (user) {
-                token.id = user.id;
-                token.role = user.role;
-            }
-            return token;
-        },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         async session({ session, user, trigger, token }: any) {
             // Set the user id from token
+            console.log(token)
             session.user.id = token.sub;
+            session.user.role = token.role;
+            session.user.name = token.name;
+
             // if there is an update, set the user name
             if (trigger == 'update') {
                 session.user.name = user.name
             }
             return session
         },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        async jwt({ token, user, trigger, session }: any) {
+            // assgin user fields to the token.
+            if (user) {
+                token.id = user.id;
+                token.role = user.role;
+                // if user has no name use the email
+                if (user.name === "NO_NAME") {
+                    token.name = user.email!.split('@')[0]
+                    await prisma.user.update({
+                        where: { id: user.id },
+                        data: { name: token.name }
+                    })
+                }
+                if (trigger === 'signIn' || trigger === 'signUp') {
+                    const cookiesObject = await cookies();
+                    const sessionCardId = cookiesObject.get('sessionCartId')?.value;
+                    if (sessionCardId) {
+                        const sessionCard = await prisma.cart.findFirst({
+                            where: { sessionCartId: sessionCardId }
+                        })
+                        if (sessionCard) {
+                            // delete current user cart
+                            await prisma.cart.deleteMany({
+                                where: { userId: user.id },
+                            })
+                            // assign new cart
+                            await prisma.cart.update({
+                                where: { id: sessionCard.id },
+                                data: { userId: user.id }
+                            })
+                        }
+                    }
+                }
+            }
+            // handle session updates
+            if (session?.user.name && trigger === 'update') {
+                token.name = session.user.name;
+            }
+            return token
+        },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         authorized({ request, auth }: any) {
-            // Check for cart cookie
+            // array of regex patterns of paths we want to protect
+            const protectedPaths = [
+                /\/shipping-address/,
+                /\/payment-method/,
+                /\/place-order/,
+                /\/profile/,
+                /\/user\/(.*)/,
+                /\/order\/(.*)/,
+                /\/admin/,
+            ]
+            // get pathname from the req URL Object
+            const { pathname } = request.nextUrl;
+            // if user is not authenticated and accessing a protested path
+            if (!auth && protectedPaths.some((p) => p.test(pathname))) return false;
+
+            // check for session cart coookie
             if (!request.cookies.get('sessionCartId')) {
-                // Generate cart cookie
-                const sessionCartId = crypto.randomUUID();
-                console.log('Generated sessionCartId:', sessionCartId);
-
-                // Clone the request headers
-                const newRequestHeaders = new Headers(request.headers);
-
-                // Create a new response and add the new headers
+                // generate new session cart id cookie
+                const sessionCardId = crypto.randomUUID()
+                console.log(sessionCardId)
+                // clone the req headers
+                const newRequestHeaders = new Headers(request.headers)
+                // create new response and add the new headers
                 const response = NextResponse.next({
                     request: {
                         headers: newRequestHeaders,
-                    },
-                });
-
-                // Set the newly generated sessionCartId in the response cookies
-                response.cookies.set('sessionCartId', sessionCartId);
-
-                // Return the response with the sessionCartId set
+                    }
+                })
+                response.cookies.set('sessionCartId', sessionCardId)
                 return response;
-            } else {
-                return true;
             }
-        },
+            else {
+                return true
+            }
+        }
+
     }
 } satisfies NextAuthConfig
 export const { handlers, auth, signIn, signOut } = NextAuth(config);
