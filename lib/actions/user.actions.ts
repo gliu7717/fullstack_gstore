@@ -7,6 +7,9 @@ import { prisma } from '@/db/prisma'
 import { formatError } from "../utils"
 import { ShippingAddress } from "@/types"
 import z from "zod"
+import { revalidatePath } from 'next/cache';
+import { paypal } from '../paypal';
+import { CartItem, PaymentResult } from '@/types';
 // Sign in the user with credentials
 export async function signInWithCredentials(preState: unknown, formData: FormData) {
     try {
@@ -120,5 +123,47 @@ export async function updateUserPaymentMethod(data: z.infer<typeof paymentMethod
         }
     } catch (error) {
         return { success: false, message: formatError(error) }
+    }
+}
+
+// Create a Paypal Order
+export async function createPayPalOrder(orderId: string) {
+    try {
+        // Get order from database
+        const order = await prisma.order.findFirst({
+            where: {
+                id: orderId,
+            },
+        });
+        if (order) {
+            // Create a paypal order
+            const paypalOrder = await paypal.createOrder(Number(order.totalPrice));
+
+            // Update the order with the paypal order id
+            await prisma.order.update({
+                where: {
+                    id: orderId,
+                },
+                data: {
+                    paymentResult: {
+                        id: paypalOrder.id,
+                        email_address: '',
+                        status: '',
+                        pricePaid: '0',
+                    },
+                },
+            });
+
+            // Return the paypal order id
+            return {
+                success: true,
+                message: 'PayPal order created successfully',
+                data: paypalOrder.id,
+            };
+        } else {
+            throw new Error('Order not found');
+        }
+    } catch (err) {
+        return { success: false, message: formatError(err) };
     }
 }
