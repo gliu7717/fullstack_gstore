@@ -9,20 +9,6 @@ const currency = z
     "Price must have exactly two decimal places"
   );
 
-// Schema for inserting a product
-export const insertProductSchema = z.object({
-  name: z.string().min(3, "Name must be at least 3 characters"),
-  slug: z.string().min(3, "Slug must be at least 3 characters"),
-  category: z.string().min(3, "Category must be at least 3 characters"),
-  brand: z.string().min(3, "Brand must be at least 3 characters"),
-  description: z.string().min(3, "Description must be at least 3 characters"),
-  stock: z.coerce.number(),
-  images: z.array(z.string()).min(1, "Product must have at least one image"),
-  isFeatured: z.boolean(),
-  banner: z.string().nullable(),
-  price: currency,
-});
-
 // Schema for signing users in
 export const signInFormSchema = z.object({
   email: z.email('Invalid email address'),
@@ -126,3 +112,22 @@ export const updateUserSchema = updateProfileSchema.extend({
   id: z.string().min(1, "ID is required"),
   role: z.string().min(1, "Role is required"),
 });
+
+export const insertProductSchema = z.object({
+  name: z.string().min(3, "Name must be at least 3 characters"),
+  slug: z.string().min(3, "Slug must be at least 3 charcters"),
+  category: z.string().min(3, "Category must be at least 3 charcters"),
+  brand: z.string().min(3, "Brand must be at least 3 charcters"),
+  description: z.string().min(3, "Description must be at least 3 charcters"),
+  stock: z.transform(Number).pipe(z.number()),
+  images: z.array(z.string()).min(1, "Product must have at least 1 image"),
+  isFeatured: z.boolean(),
+  banner: z.string().nullable(),
+  price: currency,
+});
+// Schema for updating products
+
+export const updateProductSchema = insertProductSchema.extend({
+  id: z.string().min(1, "Id is required"),
+});
+

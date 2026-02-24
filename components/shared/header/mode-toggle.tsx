@@ -9,11 +9,44 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { useTheme } from "next-themes";
+import { useEffect, useState } from "react";
 import { SunIcon, MoonIcon, SunMoon } from "lucide-react";
 
 const ModeToggle = () => {
   const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
 
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            className="focus-visible:ring-0 focus-visible:ring-offset-0"
+          >
+            <SunIcon />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent>
+          <DropdownMenuLabel>Appearance</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuCheckboxItem checked={false} onClick={() => setTheme("system")}>
+            System
+          </DropdownMenuCheckboxItem>
+          <DropdownMenuCheckboxItem checked={false} onClick={() => setTheme("light")}>
+            light
+          </DropdownMenuCheckboxItem>
+          <DropdownMenuCheckboxItem checked={false} onClick={() => setTheme("dark")}>
+            dark
+          </DropdownMenuCheckboxItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
+  }
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>

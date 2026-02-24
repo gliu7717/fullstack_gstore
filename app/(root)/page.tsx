@@ -8,7 +8,7 @@ import { Product } from "@/types";
 
 const Homepage = async () => {
   //  await delay(2000);
-  const latestProducts = await getLatestProducts() as Product[];
+  const latestProducts = await getLatestProducts() as unknown as Product[];
   return (
     <>
       <ProductList data={latestProducts} title='Newest Arrivals' />
