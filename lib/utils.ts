@@ -19,7 +19,7 @@ export function formatNumberWithDecimal(num: number): string {
 
 // format errors
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function formatError(error: any) {
+export function formatError(error: any) {
   if (error.name === 'ZodError') {
     //handle zod error
     const fieldErrors = Object.keys(error.flatten().fieldErrors).map((field) => error.flatten().fieldErrors[field])
@@ -38,7 +38,6 @@ export async function formatError(error: any) {
 
 // round number to 2 decimal 
 export function round2(value: number | string) {
-  console.log(value)
   if (typeof value === 'number') {
     return Math.round((value + Number.EPSILON) * 100) / 100
 
@@ -130,4 +129,11 @@ export function formUrlQuery({
       skipNull: true,
     }
   );
+}
+
+// Format numbers
+const NUMBER_FORMATTER = new Intl.NumberFormat('en-US');
+
+export function formatNumber(number: number) {
+  return NUMBER_FORMATTER.format(number);
 }

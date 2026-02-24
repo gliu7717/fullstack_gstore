@@ -62,7 +62,6 @@ export const config = {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         async session({ session, user, trigger, token }: any) {
             // Set the user id from token
-            console.log(token)
             session.user.id = token.sub;
             session.user.role = token.role;
             session.user.name = token.name;
@@ -135,7 +134,6 @@ export const config = {
             if (!request.cookies.get('sessionCartId')) {
                 // generate new session cart id cookie
                 const sessionCardId = crypto.randomUUID()
-                console.log(sessionCardId)
                 // clone the req headers
                 const newRequestHeaders = new Headers(request.headers)
                 // create new response and add the new headers

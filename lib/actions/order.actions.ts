@@ -69,7 +69,6 @@ export async function CreateOrder() {
       })
       return insertedOrder.id;
     })
-    console.log('Inserted order id:', insertedOrderId);
 
     if (!insertedOrderId) throw new Error('Order not created');
     return { success: true, message: 'Order created', redirectTo: `/order/${insertedOrderId}` }
@@ -148,10 +147,7 @@ export async function approvePayPalOrder(
     });
 
     if (!order) throw new Error("Order not found");
-
-    console.log(data.orderID);
     const captureData = await paypal.capturePayment(data.orderID);
-    console.log("capturePayment error ");
 
     if (
       !captureData ||
@@ -246,7 +242,6 @@ async function updateOrderToPaid({
   }
 };
 
-
 // Get user's orders
 export async function getMyOrders({
   limit = PAGE_SIZE,
@@ -272,5 +267,50 @@ export async function getMyOrders({
   return {
     data,
     totalPages: Math.ceil(dataCount / limit),
+  };
+}
+
+
+type salesDataType = {
+  month: string;
+  totalSales: number;
+};
+
+// Get sales data and order summary
+export async function getOrderSummary() {
+  // Get counts for each resource
+  const ordersCount = await prisma.order.count();
+  const productsCount = await prisma.product.count();
+  const usersCount = await prisma.user.count();
+
+  // Calculate total sales
+  const totalSales = await prisma.order.aggregate({
+    _sum: { totalPrice: true },
+  });
+
+  // Get daily sales for current month
+  const salesDataRaw: { date: string; totalSales: number }[] =
+    await prisma.$queryRaw`SELECT to_char("createdAt", 'YYYY-MM-DD') as "date", sum("totalPrice")::numeric as "totalSales" FROM "Order" WHERE to_char("createdAt", 'YYYY-MM') = to_char(CURRENT_DATE, 'YYYY-MM') GROUP BY to_char("createdAt", 'YYYY-MM-DD') ORDER BY "date"`;
+  const salesData = salesDataRaw.map(item => ({
+    date: item.date,
+    totalSales: Number(item.totalSales),
+  }));
+
+  // Get latest sales
+  const latestOrders = await prisma.order.findMany({
+    orderBy: { createdAt: 'desc' },
+    include: {
+      user: { select: { name: true } },
+    },
+    take: 6,
+  });
+
+  return {
+    ordersCount,
+    productsCount,
+    usersCount,
+    totalSales,
+    latestSales: latestOrders,
+    salesData,
   };
 }

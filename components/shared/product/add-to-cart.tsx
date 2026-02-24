@@ -17,12 +17,10 @@ const AddToCart = ({ cart, item }: { cart?: Cart, item: CartItem }) => {
 
             const res = await addItemToCart(item)
             if (!res.success) {
-                console.log(res.message)
                 toast.error(res.message)
                 return;
             }
             // handle success add to cart
-            console.log(`${item.name} added to cart`)
             toast("Item added to cart", {
                 description: res.message,
                 action: {

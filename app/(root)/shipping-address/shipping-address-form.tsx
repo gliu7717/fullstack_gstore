@@ -24,7 +24,6 @@ const ShippingAddressForm = ({ address }: { address: ShippingAddress }) => {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const onSubmit: SubmitHandler<z.infer<typeof shippingAddressSchema>> = async (values) => {
-        console.log(values);
         startTransition(async () => {
             const res = await updateUserAddress(values)
             if (!res.success) {
