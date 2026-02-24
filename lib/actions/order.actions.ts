@@ -11,6 +11,7 @@ import { CartItem, PaymentResult } from "@/types";
 import { revalidatePath } from "next/cache";
 import { paypal } from "../paypal";
 import { PAGE_SIZE } from '../constants';
+import { Prisma } from "../generated/prisma/browser";
 
 
 //Create order and create order item
