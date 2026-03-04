@@ -7,11 +7,12 @@ import { getMyCart } from "./cart.actions";
 import { getUserById } from "./user.actions";
 import { insertOrderSchema } from "../validators";
 import { prisma } from "@/db/prisma";
-import { CartItem, PaymentResult } from "@/types";
+import { CartItem, PaymentResult, ShippingAddress } from "@/types";
 import { revalidatePath } from "next/cache";
 import { paypal } from "../paypal";
 import { PAGE_SIZE } from '../constants';
 import { Prisma } from "../generated/prisma/browser";
+import { sendPurchaseReceipt } from "@/email";
 
 
 //Create order and create order item
@@ -245,9 +246,10 @@ export async function updateOrderToPaid({
     order: {
       ...updatedOrder,
       shippingAddress: updatedOrder.shippingAddress as ShippingAddress,
-      paymentResult: updatedOrder.paymentResult as PaymentResult,
+      //paymentResult: updatedOrder.paymentResult as PaymentResult,
     },
   });
+
 };
 
 // Get user's orders
